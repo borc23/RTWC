@@ -1,0 +1,46 @@
+# =====================================================
+# DVC Tracked Parameters
+# These parameters are tracked by DVC for reproducibility
+# Changes here will trigger pipeline reruns
+# =====================================================
+
+# Model configuration
+model:
+  architecture: "yolov8m.yaml"
+  pretrained: false
+  imgsz: 640
+
+# Training hyperparameters
+training:
+  epochs: 100
+  batch_size: 32
+  optimizer: "SGD"
+  lr0: 0.01
+  lrf: 0.01
+  seed: 42
+
+# Slicing configuration
+slicing:
+  slice_height: 640
+  slice_width: 640
+  overlap_ratio: 0.2
+  min_area_ratio: 0.1
+  include_negatives: true
+
+# Augmentation settings
+augmentations:
+  enable: true
+  hflip: 0.5
+  color_jitter_p: 0.75
+  gauss_noise_p: 0.2
+  blur_p: 0.5
+
+# Data fractions (for experiments)
+data:
+  train_fraction: 1.0
+  val_fraction: 1.0
+
+# Inference settings
+inference:
+  conf_threshold: 0.25
+  iou_threshold: 0.5

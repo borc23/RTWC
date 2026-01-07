@@ -1,0 +1,96 @@
+# =====================================================
+# DVC Pipeline Definition
+# Run with: dvc repro
+# =====================================================
+
+stages:
+  # Stage 1: Prepare and validate data
+  prepare:
+    cmd: python src/prepare_data.py 
+         --data-dir data 
+         --output-yaml data/data.yaml 
+         --stats-output outputs/data_stats.json
+    deps:
+      - src/prepare_data.py
+      - data/train/images
+      - data/val/images
+    outs:
+      - outputs/data_stats.json
+    plots:
+      - outputs/data_stats.json:
+          x: splits.train.total_objects
+          y: splits.val.total_objects
+
+  # Stage 2: Train the model
+  train:
+    cmd: python src/train.py 
+         --config configs/train_config.yaml
+         --wandb-project ${wandb_project}
+         --metrics-output outputs/train_metrics.json
+    deps:
+      - src/train.py
+      - configs/train_config.yaml
+      - data/data.yaml
+      - data/train/images
+      - data/train/labels
+      - data/val/images
+      - data/val/labels
+    params:
+      - training
+      - slicing
+      - augmentations
+      - model
+    outs:
+      - runs/train/exp/weights/best.pt
+      - runs/train/exp/weights/last.pt
+    metrics:
+      - outputs/train_metrics.json:
+          cache: false
+
+  # Stage 3: Evaluate on validation set
+  evaluate:
+    cmd: python src/evaluate.py 
+         --model runs/train/exp/weights/best.pt
+         --data data/data.yaml
+         --config configs/train_config.yaml
+         --output-dir outputs
+    deps:
+      - src/evaluate.py
+      - runs/train/exp/weights/best.pt
+      - data/data.yaml
+      - data/val/images
+      - data/val/labels
+    params:
+      - slicing
+    metrics:
+      - outputs/eval_metrics.json:
+          cache: false
+    plots:
+      - outputs/eval/confusion_matrix.png
+      - outputs/eval/PR_curve.png
+
+  # Stage 4: Test inference (only if test data exists)
+  test:
+    cmd: python src/test.py
+         --model runs/train/exp/weights/best.pt
+         --data data/data.yaml
+         --config configs/train_config.yaml
+         --output-dir outputs
+         --conf ${inference.conf_threshold}
+    deps:
+      - src/test.py
+      - runs/train/exp/weights/best.pt
+      - data/data.yaml
+      - data/test/images
+    params:
+      - slicing
+      - inference.conf_threshold
+    outs:
+      - outputs/predictions/labels
+    metrics:
+      - outputs/test_metrics.json:
+          cache: false
+
+# Variables (can be overridden via CLI)
+vars:
+  - wandb_project: "yolo-sliced-training"

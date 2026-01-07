@@ -1,0 +1,61 @@
+# =====================================================
+# YOLOv8 Sliced Training Configuration
+# =====================================================
+
+# ------------------- Dataset Settings --------------------
+data: "data/data.yaml"  # Path to the dataset's .yaml file
+
+# Use a fraction of the dataset for quick experiments (1.0 = full dataset)
+train_fraction: 1.0
+val_fraction: 1.0
+
+# ------------------- Training Parameters -------------------
+model: "yolov8m.yaml"           # Model architecture (or path to pretrained weights)
+pretrained: false               # Use pretrained weights
+epochs: 100
+batch: 32
+imgsz: 640                      # Target image size (slices will be resized to this)
+device: null                    # Device: 'cpu', '0', '0,1,2,3', or null for auto
+workers: 12                     # DataLoader workers
+project: "runs/train"           # Project directory for results
+name: "exp"                     # Experiment name
+plots: true                     # Generate plots (confusion matrix, P-R curve, etc.)
+resume: false                   # Resume from last checkpoint
+seed: 42
+
+# ------------------- Optimizer Parameters --------------------
+optimizer: "SGD"                # Optimizer: Adam, AdamW, SGD, etc.
+lr0: 0.01                       # Initial learning rate
+lrf: 0.01                       # Final LR factor (final_lr = lr0 * lrf)
+
+# ------------------- Slicing Parameters ----------------------
+slicing:
+  slice_height: 640
+  slice_width: 640
+  overlap_ratio: 0.2            # Overlap between slices during training
+  min_area_ratio: 0.1           # Minimum visible area ratio for annotations
+  include_negatives: true       # Include slices without annotations
+
+# ------------------- Augmentation Parameters -------------------
+augmentations:
+  enable: true
+  hflip: 0.5                    # Horizontal flip probability
+  
+  # Color augmentations
+  color_jitter_p: 0.75
+  color_jitter_brightness: 0.2
+  color_jitter_contrast: 0.2
+  color_jitter_saturation: 0.2
+  color_jitter_hue: 0.1
+  
+  # Noise and blur
+  gauss_noise_p: 0.2
+  blur_p: 0.5
+  blur_limit: 3
+
+# ------------------- W&B Settings -------------------
+wandb_project: "yolo-sliced-training"
+wandb_run_name: null            # Auto-generated if null
+
+# ------------------- Output Settings -------------------
+metrics_output: "outputs/train_metrics.json"
