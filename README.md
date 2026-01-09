@@ -1,4 +1,4 @@
-# YOLO Sliced Training Pipeline
+# Training Pipeline
 
 A production-ready ML pipeline for training YOLOv8 models with image slicing, featuring:
 - **DVC** for data and model versioning
