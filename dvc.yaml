@@ -1,24 +1,17 @@
 stages:
   # Stage 1: Prepare data statistics and data.yaml if needed
   prepare:
-    cmd: python ./src/prepare_data.py --data-dir ./data/ --output-yaml
-      ./data/data.yaml --stats-output ./outputs/data_stats.json
+    cmd: python ./src/prepare_data.py --data-dir ./data/
     deps:
     - ./src/prepare_data.py
-    - ./data/train/images
-    - ./data/train/labels
-    - ./data/val/images
-    - ./data/val/labels
-    params:
-    - data
+    - ./data/
     outs:
     - ./outputs/data_stats.json
-    - ./data/data.yaml
 
-  # Stage 2: Train the model
   train:
-    cmd: python ./src/train.py --config ./configs/train_config.yaml --wandb-project 
-      ${wandb_project} --metrics-output ./outputs/train_metrics.json
+    cmd: python ./src/train.py --config ./configs/train_config.yaml 
+      --wandb-project ${wandb_project} --metrics-output 
+      ./outputs/train_metrics.json
     deps:
     - ./src/train.py
     - ./configs/train_config.yaml
@@ -37,8 +30,9 @@ stages:
 
   # Stage 3: Evaluate
   evaluate:
-    cmd: python ./src/evaluate.py --model ./runs/train/exp/weights/best.pt --data 
-      ./data/data.yaml --config ./configs/train_config.yaml --output-dir ./outputs
+    cmd: python ./src/evaluate.py --model ./runs/train/exp/weights/best.pt 
+      --data ./data/data.yaml --config ./configs/train_config.yaml --output-dir 
+      ./outputs
     deps:
     - ./src/evaluate.py
     - ./runs/train/exp/weights/best.pt
@@ -55,8 +49,8 @@ stages:
   # Stage 4: Test inference (only if test data exists)
   test:
     cmd: python ./src/test.py --model ./runs/train/exp/weights/best.pt --data 
-      ./data/data.yaml --config ./configs/train_config.yaml --output-dir ./outputs 
-      --conf ${inference.conf_threshold}
+      ./data/data.yaml --config ./configs/train_config.yaml --output-dir 
+      ./outputs --conf ${inference.conf_threshold}
     deps:
     - ./src/test.py
     - ./runs/train/exp/weights/best.pt

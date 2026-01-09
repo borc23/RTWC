@@ -51,21 +51,26 @@ checkout_data_version() {
 get_data_version() {
     local dvc_file=${1:-data.dvc}
 
-    if [[ ! -f "$dvc_file"]]; then
+    if [[ ! -f "$dvc_file" ]]; then
         echo -e "${RED}Error: $dvc_file not found.${NC}"
         return 1
     fi
 
-    local versions=($(get_data_versions "$dvc_file"))
+    local versions=()
+    while IFS= read -r line; do
+        versions+=("$line")
+    done < <(get_data_versions "$dvc_file")
+
     if [[ ${#versions[@]} -eq 0 ]]; then
         echo -e "${RED}No versions found for $dvc_file${NC}"
         return 1
     fi
 
     echo -e "${GREEN}Available versions of $dvc_file:${NC}"
+    PS3="Select row number: "
     select version in "${versions[@]}"; do
         if [[ -n "$version" ]]; then
-            local commit_hash=$(echo "$version" | cut -d' ' -f1)
+            local commit_hash=$(echo "$version" | awk '{print $1}')
             checkout_data_version "$commit_hash" "$dvc_file"
             break
         else
@@ -105,15 +110,66 @@ case "$1" in
             echo -e "${YELLOW}Usage: ./scripts/run.sh version_data <version>${NC}"
             echo "Example: ./scripts/run.sh version_data 1.0.3"
             exit 1
-        fi 
+        fi
 
         VERSION="$2"
         echo -e "${GREEN}Setting data version to v${VERSION}...${NC}"
+
+        # Check for unstaged changes and stash if needed
+        STASH_NEEDED=false
+        if ! git diff --quiet || ! git diff --cached --quiet; then
+            echo -e "${YELLOW}Unstaged changes detected. Stashing...${NC}"
+            git stash push -u -m "Auto-stash before data version v${VERSION}"
+            STASH_NEEDED=true
+        fi
+
+        # Sync with remote first
+        echo -e "${YELLOW}Syncing with remote...${NC}"
+        git fetch origin
+        if ! git diff --quiet HEAD origin/master; then
+            echo -e "${YELLOW}Remote has changes. Pulling...${NC}"
+            git pull --rebase origin master || {
+                echo -e "${RED}Failed to sync with remote. Please resolve conflicts.${NC}"
+                if [ "$STASH_NEEDED" = true ]; then
+                    echo -e "${YELLOW}Restoring stashed changes...${NC}"
+                    git stash pop
+                fi
+                exit 1
+            }
+        fi
+
+        # Restore stashed changes if any
+        if [ "$STASH_NEEDED" = true ]; then
+            echo -e "${YELLOW}Restoring stashed changes...${NC}"
+            git stash pop || {
+                echo -e "${RED}Warning: Could not restore stashed changes. Check 'git stash list'${NC}"
+            }
+        fi
+
+        # Add data to DVC
         dvc add ./data/
+
+        # Commit DVC metadata
         git add data.dvc .gitignore
-        git commit -m "Data version v${VERSION}"
-        dvc push
-        git push
+        git commit -m "Data version v${VERSION}" || {
+            echo -e "${YELLOW}No changes to commit or commit failed${NC}"
+        }
+
+        # Push to DVC remote
+        echo -e "${GREEN}Pushing data to DVC remote...${NC}"
+        dvc push || {
+            echo -e "${RED}DVC push failed!${NC}"
+            exit 1
+        }
+
+        # Push to Git remote
+        echo -e "${GREEN}Pushing to Git remote...${NC}"
+        git push || {
+            echo -e "${RED}Git push failed!${NC}"
+            exit 1
+        }
+
+        echo -e "${GREEN}Data version v${VERSION} successfully created and pushed!${NC}"
         ;;
 
     get_data_version)
