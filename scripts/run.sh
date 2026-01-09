@@ -35,7 +35,7 @@ show_help() {
 
 get_data_versions() {
     local dvc_file=${1:-data.dvc}
-    git log --oneline --format="%h %s" "$dvc_file"
+    git log --oneline --format="%h %s" "$dvc_file" | grep -i "Data version v"
 }
 
 checkout_data_version() {
