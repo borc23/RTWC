@@ -1,4 +1,4 @@
-# Training Pipeline
+# End-To-End Pipeline
 
 A production-ready ML pipeline for training YOLOv8 models with image slicing, featuring:
 - **DVC** for data and model versioning
@@ -54,12 +54,7 @@ data/
     └── labels/
 ```
 
-Track with DVC:
-```bash
-dvc add data
-git add data.dvc .gitignore
-git commit -m "Add training data"
-```
+
 
 ### 3. Configure Training
 
@@ -140,6 +135,10 @@ yolo-pipeline/
 ./scripts/run.sh train
 ./scripts/run.sh eval
 ./scripts/run.sh test
+
+# Data versioning
+./scripts/run.sh version_data <version>
+./scripts/run.sh prepare
 
 # Check status
 ./scripts/run.sh status

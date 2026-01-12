@@ -8,6 +8,7 @@ stages:
     outs:
     - ./outputs/data_stats.json
 
+  # Stage 2: Train
   train:
     cmd: python ./src/train.py --config ./configs/train_config.yaml 
       --wandb-project ${wandb_project} --metrics-output 
@@ -28,6 +29,8 @@ stages:
     - ./outputs/train_metrics.json:
         cache: false
 
+
+  # ==========================================================================================
   # Stage 3: Evaluate
   evaluate:
     cmd: python ./src/evaluate.py --model ./runs/train/exp/weights/best.pt 
