@@ -32,7 +32,7 @@ except (ImportError, ModuleNotFoundError):
     print("Error: Could not import 'get_slice_bboxes' from 'sahi'. pip install sahi")
     sys.exit(1)
 
-from ..utils.coordinates import yolo_to_abs_bbox, abs_bbox_to_yolo
+from utils.coordinates import yolo_to_abs_bbox, abs_bbox_to_yolo
 
 
 def seed_worker(worker_id):
@@ -311,8 +311,6 @@ class SlicedDataset(Dataset):
 
 
 class SlicedDetectionTrainer(DetectionTrainer):
-    """Custom trainer for sliced detection with augmentations."""
-
     def __init__(self, overrides=None, _callbacks=None):
         self.train_transform = overrides.pop("train_transform", None)
         self.val_transform = overrides.pop("val_transform", None)

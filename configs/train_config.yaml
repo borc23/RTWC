@@ -54,7 +54,7 @@ augmentations:
   blur_limit: 3
 
 # ------------------- W&B Settings -------------------
-wandb_project: "yolo-sliced-training"
+wandb_project: "RTWC_sliced"
 wandb_run_name: null            # Auto-generated if null
 
 # ------------------- Output Settings -------------------

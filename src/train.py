@@ -1,5 +1,4 @@
-"""Main training script for YOLOv8 with slicing and W&B tracking."""
-
+#!/usr/bin/env python3
 import argparse
 import json
 import os
@@ -25,13 +24,34 @@ except ImportError:
 from data import SlicedDetectionTrainer, build_augmentations
 
 
-def setup_wandb(config, project_name, run_name):
-    """Initialize Weights & Biases tracking."""
+def setup_wandb(config, project_name, run_name, api_key=None):
     if not WANDB_AVAILABLE:
         return None
+    
+    try:
+        if api_key:
+            os.environ["WANDB_API_KEY"] = api_key
+        elif not os.environ.get("WANDB_API_KEY"):
+            api_key = input("Enter your W&B API Key: ").strip()
+            if not api_key:
+                print("No API key provided. Skipping W&B tracking...")
+                return None
+            os.environ["WANDB_API_KEY"] = api_key
 
-    wandb.init(project=project_name, name=run_name, config=config, reinit=True)
-    return wandb.run
+        wandb.login(key=os.environ["WANDB_API_KEY"], relogin=True)
+        print("API Key set successfully!")
+    except (EOFError, KeyboardInterrupt):
+        print("\nInput interrupted. Skipping W&B tracking...")
+        return None
+
+    try:
+        wandb.init(project=project_name, name=run_name, config=config, reinit=True)
+        print(f"W&B tracking initialized: {wandb.run.url}")
+        return wandb.run
+    except Exception as e:
+        print(f"Failed to initialize W&B: {e}")
+        print("Continuing without W&B tracking...")
+        return None
 
 
 def export_metrics(results_dir, output_path):
@@ -63,7 +83,7 @@ def export_metrics(results_dir, output_path):
     return metrics
 
 
-def run_training(config):
+def run_training(config, wandb_api_key=None):
     """Main function to run YOLOv8 training with slicing and W&B."""
     print("\n--- Preparing for training ---")
 
@@ -79,6 +99,7 @@ def run_training(config):
         config={**config, "slicing": slicing_cfg, "augmentations": aug_config},
         project_name=wandb_project,
         run_name=wandb_run_name or config.get("name", "exp"),
+        api_key=wandb_api_key,
     )
 
     yolo_overrides = config
@@ -133,6 +154,12 @@ def main():
         "--wandb-run-name", type=str, default=None, help="W&B run name."
     )
     parser.add_argument(
+        "--wandb-api-key",
+        type=str,
+        default=None,
+        help="W&B API key (alternative to WANDB_API_KEY env var).",
+    )
+    parser.add_argument(
         "--metrics-output",
         type=str,
         default="outputs/train_metrics.json",
@@ -181,7 +208,7 @@ def main():
             else:
                 config[key] = value
 
-    run_training(config)
+    run_training(config, wandb_api_key=args.wandb_api_key)
 
 
 if __name__ == "__main__":

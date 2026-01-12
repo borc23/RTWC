@@ -6,6 +6,11 @@
 
 set -e
 
+# Load environment variables from .env file if it exists
+if [ -f .env ]; then
+    export $(grep -v '^#' .env | xargs)
+fi
+
 # Colors
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -87,7 +92,11 @@ case "$1" in
         
     train)
         echo -e "${GREEN}Running training stage...${NC}"
-        dvc repro train
+        if [ -n "$2" ]; then
+            dvc repro train --vars wandb_project="$2"
+        else
+            dvc repro train
+        fi
         ;;
         
     eval|evaluate)
@@ -115,7 +124,6 @@ case "$1" in
         VERSION="$2"
         echo -e "${GREEN}Setting data version to v${VERSION}...${NC}"
 
-        # Check for unstaged changes and stash if needed
         STASH_NEEDED=false
         if ! git diff --quiet || ! git diff --cached --quiet; then
             echo -e "${YELLOW}Unstaged changes detected. Stashing...${NC}"
@@ -123,7 +131,6 @@ case "$1" in
             STASH_NEEDED=true
         fi
 
-        # Sync with remote first
         echo -e "${YELLOW}Syncing with remote...${NC}"
         git fetch origin
         if ! git diff --quiet HEAD origin/master; then
@@ -138,7 +145,6 @@ case "$1" in
             }
         fi
 
-        # Restore stashed changes if any
         if [ "$STASH_NEEDED" = true ]; then
             echo -e "${YELLOW}Restoring stashed changes...${NC}"
             git stash pop || {
@@ -146,23 +152,19 @@ case "$1" in
             }
         fi
 
-        # Add data to DVC
         dvc add ./data/
 
-        # Commit DVC metadata
         git add data.dvc .gitignore
         git commit -m "Data version v${VERSION}" || {
             echo -e "${YELLOW}No changes to commit or commit failed${NC}"
         }
 
-        # Push to DVC remote
         echo -e "${GREEN}Pushing data to DVC remote...${NC}"
         dvc push || {
             echo -e "${RED}DVC push failed!${NC}"
             exit 1
         }
 
-        # Push to Git remote
         echo -e "${GREEN}Pushing to Git remote...${NC}"
         git push || {
             echo -e "${RED}Git push failed!${NC}"

@@ -138,6 +138,8 @@ yolo-pipeline/
 
 # Data versioning
 ./scripts/run.sh version_data <version>
+./scripts/run.sh get_data_version
+
 ./scripts/run.sh prepare
 
 # Check status
