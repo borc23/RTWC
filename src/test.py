@@ -4,12 +4,13 @@ Runs inference on test data, calculates metrics if labels exist.
 """
 import argparse
 import json
-import yaml
-import sys
 import os
+import sys
 from pathlib import Path
-from PIL import Image
+
 import numpy as np
+import yaml
+from PIL import Image
 from tqdm import tqdm
 
 try:

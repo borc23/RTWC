@@ -8,12 +8,12 @@
 model:
   architecture: "yolov8m.yaml"
   pretrained: False
-  imgsz: 640
+  imgsz: 160
 
 # Training hyperparameters
 training:
-  epochs: 100
-  batch_size: 32
+  epochs: 1
+  batch_size: 4
   optimizer: "SGD"
   lr0: 0.01
   lrf: 0.01
@@ -21,8 +21,8 @@ training:
 
 # Slicing configuration
 slicing:
-  slice_height: 640
-  slice_width: 640
+  slice_height: 160
+  slice_width: 160
   overlap_ratio: 0.2
   min_area_ratio: 0.1
   include_negatives: true

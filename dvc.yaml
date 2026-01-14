@@ -10,8 +10,8 @@ stages:
 
   # Stage 2: Train
   train:
-    cmd: python ./src/train.py --config ./configs/train_config.yaml 
-      --wandb-project ${wandb_project} --metrics-output 
+    cmd: python ./src/train.py --config ./configs/train_config.yaml
+      --wandb-project ${wandb_project} --metrics-output
       ./outputs/train_metrics.json
     deps:
     - ./src/train.py
@@ -23,20 +23,20 @@ stages:
     - augmentations
     - model
     outs:
-    - ./runs/train/exp/weights/best.pt
-    - ./runs/train/exp/weights/last.pt
+    - ./models/best.pt
+    - ./models/last.pt
     metrics:
     - ./outputs/train_metrics.json:
         cache: false
 
   # Stage 3: Evaluate
   evaluate:
-    cmd: python ./src/evaluate.py --model ./runs/train/exp/weights/best.pt 
-      --data ./data/data.yaml --config ./configs/train_config.yaml --output-dir 
+    cmd: python ./src/evaluate.py --model ./models/best.pt
+      --data ./data/data.yaml --config ./configs/train_config.yaml --output-dir
       ./outputs
     deps:
     - ./src/evaluate.py
-    - ./runs/train/exp/weights/best.pt
+    - ./models/best.pt
     - ./data/data.yaml
     params:
     - slicing
@@ -49,12 +49,12 @@ stages:
 
   # Stage 4: Test inference (only if test data exists)
   test:
-    cmd: python ./src/test.py --model ./runs/train/exp/weights/best.pt --data 
-      ./data/data.yaml --config ./configs/train_config.yaml --output-dir 
+    cmd: python ./src/test.py --model ./models/best.pt --data
+      ./data/data.yaml --config ./configs/train_config.yaml --output-dir
       ./outputs --conf ${inference.conf_threshold}
     deps:
     - ./src/test.py
-    - ./runs/train/exp/weights/best.pt
+    - ./models/best.pt
     - ./data/data.yaml
     params:
     - slicing

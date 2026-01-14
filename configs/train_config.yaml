@@ -12,11 +12,11 @@ val_fraction: 1.0
 # ------------------- Training Parameters -------------------
 model: "yolov8m.yaml"           # Model architecture (or path to pretrained weights)
 pretrained: false               # Use pretrained weights
-epochs: 100
-batch: 32
-imgsz: 640                      # Target image size (slices will be resized to this)
+epochs: 3
+batch: 4
+imgsz: 160                     # Target image size (slices will be resized to this)
 device: null                    # Device: 'cpu', '0', '0,1,2,3', or null for auto
-workers: 12                     # DataLoader workers
+workers: 4                     # DataLoader workers
 project: "runs/train"           # Project directory for results
 name: "exp"                     # Experiment name
 plots: true                     # Generate plots (confusion matrix, P-R curve, etc.)
@@ -30,8 +30,8 @@ lrf: 0.01                       # Final LR factor (final_lr = lr0 * lrf)
 
 # ------------------- Slicing Parameters ----------------------
 slicing:
-  slice_height: 640
-  slice_width: 640
+  slice_height: 160
+  slice_width: 160
   overlap_ratio: 0.2            # Overlap between slices during training
   min_area_ratio: 0.1           # Minimum visible area ratio for annotations
   include_negatives: true       # Include slices without annotations

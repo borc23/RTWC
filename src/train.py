@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 import argparse
+import csv
 import json
 import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -24,14 +26,12 @@ except ImportError:
 from data import SlicedDetectionTrainer, build_augmentations
 
 
-def setup_wandb(config, project_name, run_name, api_key=None):
+def setup_wandb(config, project_name, run_name):
     if not WANDB_AVAILABLE:
         return None
     
     try:
-        if api_key:
-            os.environ["WANDB_API_KEY"] = api_key
-        elif not os.environ.get("WANDB_API_KEY"):
+        if not os.environ.get("WANDB_API_KEY"):
             api_key = input("Enter your W&B API Key: ").strip()
             if not api_key:
                 print("No API key provided. Skipping W&B tracking...")
@@ -45,7 +45,7 @@ def setup_wandb(config, project_name, run_name, api_key=None):
         return None
 
     try:
-        wandb.init(project=project_name, name=run_name, config=config, reinit=True)
+        wandb.init(project=project_name, name=run_name, config=config, reinit='return_previous')
         print(f"W&B tracking initialized: {wandb.run.url}")
         return wandb.run
     except Exception as e:
@@ -58,10 +58,9 @@ def export_metrics(results_dir, output_path):
     """Export training metrics to JSON for DVC tracking."""
     metrics = {}
 
-    results_csv = Path(results_dir) / "results.csv"
+    results_csv = results_dir / "results.csv"
     if results_csv.exists():
-        import csv
-
+        
         with open(results_csv, "r") as f:
             reader = csv.DictReader(f)
             rows = list(reader)
@@ -83,7 +82,7 @@ def export_metrics(results_dir, output_path):
     return metrics
 
 
-def run_training(config, wandb_api_key=None):
+def run_training(config):
     """Main function to run YOLOv8 training with slicing and W&B."""
     print("\n--- Preparing for training ---")
 
@@ -99,7 +98,6 @@ def run_training(config, wandb_api_key=None):
         config={**config, "slicing": slicing_cfg, "augmentations": aug_config},
         project_name=wandb_project,
         run_name=wandb_run_name or config.get("name", "exp"),
-        api_key=wandb_api_key,
     )
 
     yolo_overrides = config
@@ -118,11 +116,23 @@ def run_training(config, wandb_api_key=None):
         model = YOLO(model_path)
         results = model.train(trainer=SlicedDetectionTrainer, **yolo_overrides)
 
-        results_dir = Path(yolo_overrides.get("project", "runs")) / yolo_overrides.get(
-            "name", "exp"
-        )
         os.makedirs(Path(metrics_output).parent, exist_ok=True)
-        metrics = export_metrics(results_dir, metrics_output)
+        metrics = export_metrics(results.save_dir, metrics_output)
+
+        # Copy best and last models to a fixed location for DVC tracking
+        models_dir = Path("models")
+        models_dir.mkdir(exist_ok=True)
+
+        best_pt = results.save_dir / "weights" / "best.pt"
+        last_pt = results.save_dir / "weights" / "last.pt"
+
+        if best_pt.exists():
+            shutil.copy2(best_pt, models_dir / "best.pt")
+            print(f"Copied best model to {models_dir / 'best.pt'}")
+
+        if last_pt.exists():
+            shutil.copy2(last_pt, models_dir / "last.pt")
+            print(f"Copied last model to {models_dir / 'last.pt'}")
 
         if wandb_run and metrics:
             wandb.log({"final": metrics})
@@ -152,12 +162,6 @@ def main():
     )
     parser.add_argument(
         "--wandb-run-name", type=str, default=None, help="W&B run name."
-    )
-    parser.add_argument(
-        "--wandb-api-key",
-        type=str,
-        default=None,
-        help="W&B API key (alternative to WANDB_API_KEY env var).",
     )
     parser.add_argument(
         "--metrics-output",
@@ -208,7 +212,7 @@ def main():
             else:
                 config[key] = value
 
-    run_training(config, wandb_api_key=args.wandb_api_key)
+    run_training(config)
 
 
 if __name__ == "__main__":

@@ -32,7 +32,7 @@ except (ImportError, ModuleNotFoundError):
     print("Error: Could not import 'get_slice_bboxes' from 'sahi'. pip install sahi")
     sys.exit(1)
 
-from utils.coordinates import yolo_to_abs_bbox, abs_bbox_to_yolo
+from utils.coordinates import abs_bbox_to_yolo, yolo_to_abs_bbox
 
 
 def seed_worker(worker_id):
@@ -337,7 +337,7 @@ class SlicedDetectionTrainer(DetectionTrainer):
 
         workers = getattr(self.args, "workers", 8)
 
-        return DataLoader(
+        loader = DataLoader(
             dataset=dataset,
             batch_size=batch_size,
             shuffle=shuffle and sampler is None,
@@ -348,6 +348,11 @@ class SlicedDetectionTrainer(DetectionTrainer):
             pin_memory=True,
             persistent_workers=workers > 0,
         )
+
+        if not hasattr(loader, 'reset'):
+            loader.reset = lambda: None
+
+        return loader
 
     def build_dataset(self, img_path, mode="train", batch=None):
         data_path = self.args.data

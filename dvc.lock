@@ -17,3 +17,63 @@ stages:
       hash: md5
       md5: d7167b19d9794f516f53d4537f571538
       size: 1028
+  train:
+    cmd: python ./src/train.py --config ./configs/train_config.yaml 
+      --wandb-project RTWC_sliced --metrics-output ./outputs/train_metrics.json
+    deps:
+    - path: ./configs/train_config.yaml
+      hash: md5
+      md5: 6e03c6200c4294849adcbb785b24552b
+      size: 2334
+    - path: ./data/data.yaml
+      hash: md5
+      md5: 95d34644f02a6892f07b2977a34ac029
+      size: 118
+    - path: ./src/train.py
+      hash: md5
+      md5: 9dc5fdaab91ed31d72383cb3201face8
+      size: 6569
+      isexec: true
+    params:
+      params.yaml:
+        augmentations:
+          enable: true
+          hflip: 0.5
+          color_jitter_p: 0.75
+          gauss_noise_p: 0.2
+          blur_p: 0.5
+          color_jitter_brightness: 0.2
+          color_jitter_contrast: 0.2
+          color_jitter_saturation: 0.2
+          color_jitter_hue: 0.1
+          blur_limit: 3
+        model:
+          architecture: yolov8m.yaml
+          pretrained: false
+          imgsz: 160
+        slicing:
+          slice_height: 160
+          slice_width: 160
+          overlap_ratio: 0.2
+          min_area_ratio: 0.1
+          include_negatives: true
+        training:
+          epochs: 1
+          batch_size: 4
+          optimizer: SGD
+          lr0: 0.01
+          lrf: 0.01
+          seed: 42
+    outs:
+    - path: ./outputs/train_metrics.json
+      hash: md5
+      md5: d32a46a842a77e6d2e1892f295e31669
+      size: 367
+    - path: ./runs/train/exp/weights/best.pt
+      hash: md5
+      md5: 26360f7b6af56b12fa5c3c03f9792312
+      size: 51973266
+    - path: ./runs/train/exp/weights/last.pt
+      hash: md5
+      md5: a1eb20a1a138f884da6a79f63f52c13a
+      size: 51973266

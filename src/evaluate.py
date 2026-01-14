@@ -4,10 +4,11 @@ Runs validation on the val set and exports metrics for DVC tracking.
 """
 import argparse
 import json
-import yaml
 import sys
-from pathlib import Path
 from copy import deepcopy
+from pathlib import Path
+
+import yaml
 
 try:
     from ultralytics import YOLO
@@ -90,8 +91,8 @@ def main():
     parser = argparse.ArgumentParser(description="Evaluate YOLOv8 model on validation set.")
     parser.add_argument('--model', type=str, required=True, help='Path to trained model weights.')
     parser.add_argument('--data', type=str, required=True, help='Path to data.yaml config.')
-    parser.add_argument('--config', type=str, default=None, help='Path to training config (for slicing params).')
-    parser.add_argument('--output-dir', type=str, default='outputs', help='Directory to save results.')
+    parser.add_argument('--config', type=str, default='./configs/train_config.yaml', help='Path to training config (for slicing params).')
+    parser.add_argument('--output-dir', type=str, default='./outputs', help='Directory to save results.')
     parser.add_argument('--wandb-project', type=str, default=None, help='W&B project name.')
     args = parser.parse_args()
     
