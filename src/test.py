@@ -1,14 +1,9 @@
-"""
-YOLOv8 Test Inference Script with Slicing Support.
-Runs inference on test data, calculates metrics if labels exist.
-"""
 import argparse
 import json
 import os
 import sys
 from pathlib import Path
 
-import numpy as np
 import yaml
 from PIL import Image
 from tqdm import tqdm

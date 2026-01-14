@@ -1,7 +1,3 @@
-"""
-YOLOv8 Evaluation Script with Slicing Support.
-Runs validation on the val set and exports metrics for DVC tracking.
-"""
 import argparse
 import json
 import sys

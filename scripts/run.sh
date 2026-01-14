@@ -8,7 +8,7 @@ set -e
 
 # Load environment variables from .env file if it exists
 if [ -f .env ]; then
-    export $(grep -v '^#' .env | xargs)
+    set -a; source .env; set +a
 fi
 
 # Colors
@@ -26,6 +26,7 @@ show_help() {
     echo "  eval        Run only evaluation (requires trained model)"
     echo "  test        Run only test inference"
     echo "  prepare     Run only data preparation"
+    echo "  compare     Compare new model with current best"
     echo "  status      Show pipeline status"
     echo "  metrics     Display all metrics"
     echo "  push        Review and push (interactive)"
@@ -39,6 +40,8 @@ show_help() {
     echo "  ./scripts/run.sh get_data_version           # Select data version"
     echo "  ./scripts/run.sh version_model 1.0.0        # Version best model"
     echo "  ./scripts/run.sh get_model_version          # Select model version"
+    echo "  ./scripts/run.sh compare                    # Compare models"
+    echo "  ./scripts/run.sh compare --auto-promote     # Compare and auto-promote if better"
     echo "  ./scripts/run.sh metrics                    # Show metrics"
 }
 
@@ -317,6 +320,12 @@ case "$1" in
 
     get_model_version)
         get_model_version "${2:-models/best_model.dvc}"
+        ;;
+
+    compare)
+        echo -e "${GREEN}Comparing models...${NC}"
+        shift  # Remove 'compare' from args
+        python src/compare_models.py "$@"
         ;;
 
     status)
