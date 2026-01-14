@@ -5,9 +5,9 @@ stages:
     deps:
     - path: ./data/
       hash: md5
-      md5: 93f02e59de55398db1510b178a7c83a9.dir
-      size: 176086096
-      nfiles: 201
+      md5: df5e7ff4428466263508b025ddbbd002.dir
+      size: 229362314
+      nfiles: 261
     - path: ./src/prepare_data.py
       hash: md5
       md5: 88f794ad913e9a6374ab8ce7ba902827
@@ -15,8 +15,8 @@ stages:
     outs:
     - path: ./outputs/data_stats.json
       hash: md5
-      md5: d7167b19d9794f516f53d4537f571538
-      size: 1028
+      md5: 4201f8691ba2071157b3f20ff877398d
+      size: 1030
   train:
     cmd: python ./src/train.py --config ./configs/train_config.yaml 
       --wandb-project RTWC_sliced --metrics-output ./outputs/train_metrics.json

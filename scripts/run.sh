@@ -18,7 +18,7 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 show_help() {
-    echo "Usage: ./scripts/run.sh [command]"
+    echo "Usage: ./scripts/run.sh [command] [options]"
     echo ""
     echo "Commands:"
     echo "  full        Run full pipeline (prepare → train → evaluate → test)"
@@ -32,9 +32,11 @@ show_help() {
     echo "  clean       Clean outputs and runs"
     echo ""
     echo "Examples:"
-    echo "  ./scripts/run.sh full                       # Run everything"
+    echo "  ./scripts/run.sh full                       # Run everything (prompt for data version)"
+    echo "  ./scripts/run.sh full --skip-version        # Run without version prompt"
     echo "  ./scripts/run.sh train                      # Train only"
     echo "  ./scripts/run.sh version_data 1.3.2         # Version data"
+    echo "  ./scripts/run.sh get_data_version           # Select data version"
     echo "  ./scripts/run.sh metrics                    # Show metrics"
 }
 
@@ -87,6 +89,18 @@ get_data_version() {
 case "$1" in
     full)
         echo -e "${GREEN}Running full pipeline...${NC}"
+
+        if [ "$2" != "--skip-version" ]; then
+            echo ""
+            read -p "Do you want to select a data version first? [y/N]: " select_version
+            if [ "$select_version" = "y" ] || [ "$select_version" = "Y" ]; then
+                get_data_version "data.dvc" || {
+                    echo -e "${RED}Failed to select data version${NC}"
+                    exit 1
+                }
+            fi
+        fi
+        echo ""
         dvc repro
         ;;
         
