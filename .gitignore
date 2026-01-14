@@ -1,6 +1,7 @@
 # DVC
 /data
 /models/*.pt
+/models/best_model
 !/models/.gitkeep
 
 # Training outputs
