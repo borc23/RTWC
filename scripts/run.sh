@@ -167,6 +167,10 @@ case "$1" in
     train)
         echo -e "${GREEN}Running training stage...${NC}"
         if [ -n "$2" ]; then
+            if [[ ! "$2" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+                echo -e "${RED}Error: Invalid wandb_project name. Only alphanumeric characters, hyphens, and underscores are allowed.${NC}"
+                exit 1
+            fi
             dvc repro train --vars wandb_project="$2"
         else
             dvc repro train
