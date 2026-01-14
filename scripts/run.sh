@@ -37,6 +37,8 @@ show_help() {
     echo "  ./scripts/run.sh train                      # Train only"
     echo "  ./scripts/run.sh version_data 1.3.2         # Version data"
     echo "  ./scripts/run.sh get_data_version           # Select data version"
+    echo "  ./scripts/run.sh version_model 1.0.0        # Version best model"
+    echo "  ./scripts/run.sh get_model_version          # Select model version"
     echo "  ./scripts/run.sh metrics                    # Show metrics"
 }
 
@@ -79,6 +81,53 @@ get_data_version() {
         if [[ -n "$version" ]]; then
             local commit_hash=$(echo "$version" | awk '{print $1}')
             checkout_data_version "$commit_hash" "$dvc_file"
+            break
+        else
+            echo -e "${YELLOW}Invalid selection. Try again.${NC}"
+        fi
+    done
+}
+
+# Model versioning functions
+get_model_versions() {
+    local dvc_file=${1:-models/best_model.dvc}
+    git log --oneline --format="%h %s" "$dvc_file" 2>/dev/null | grep -i "Model version v"
+}
+
+checkout_model_version() {
+    local commit_hash="$1"
+    local dvc_file="$2"
+
+    echo -e "${GREEN}Checking out commit $commit_hash....${NC}"
+    git checkout "$commit_hash" -- "$dvc_file"
+    dvc checkout "$dvc_file"
+    echo -e "${GREEN}Model version $commit_hash restored.${NC}"
+}
+
+get_model_version() {
+    local dvc_file=${1:-models/best_model.dvc}
+
+    if [[ ! -f "$dvc_file" ]]; then
+        echo -e "${RED}Error: $dvc_file not found. No model has been versioned yet.${NC}"
+        return 1
+    fi
+
+    local versions=()
+    while IFS= read -r line; do
+        versions+=("$line")
+    done < <(get_model_versions "$dvc_file")
+
+    if [[ ${#versions[@]} -eq 0 ]]; then
+        echo -e "${RED}No versions found for $dvc_file${NC}"
+        return 1
+    fi
+
+    echo -e "${GREEN}Available versions of $dvc_file:${NC}"
+    PS3="Select row number: "
+    select version in "${versions[@]}"; do
+        if [[ -n "$version" ]]; then
+            local commit_hash=$(echo "$version" | awk '{print $1}')
+            checkout_model_version "$commit_hash" "$dvc_file"
             break
         else
             echo -e "${YELLOW}Invalid selection. Try again.${NC}"
@@ -191,7 +240,77 @@ case "$1" in
     get_data_version)
         get_data_version "${2:-data.dvc}"
         ;;
-        
+
+    version_model)
+        if [ -z "$2" ]; then
+            echo -e "${YELLOW}Usage: ./scripts/run.sh version_model <version>${NC}"
+            echo "Example: ./scripts/run.sh version_model 1.0.0"
+            exit 1
+        fi
+
+        VERSION="$2"
+        echo -e "${GREEN}Setting model version to v${VERSION}...${NC}"
+
+        if [ ! -d "./models/best_model" ] || [ -z "$(ls -A ./models/best_model 2>/dev/null)" ]; then
+            echo -e "${RED}Error: ./models/best_model is empty or does not exist.${NC}"
+            echo -e "${YELLOW}Please copy or move your best model to ./models/best_model first.${NC}"
+            exit 1
+        fi
+
+        STASH_NEEDED=false
+        if ! git diff --quiet || ! git diff --cached --quiet; then
+            echo -e "${YELLOW}Unstaged changes detected. Stashing...${NC}"
+            git stash push -u -m "Auto-stash before model version v${VERSION}"
+            STASH_NEEDED=true
+        fi
+
+        echo -e "${YELLOW}Syncing with remote...${NC}"
+        git fetch origin
+        if ! git diff --quiet HEAD origin/master; then
+            echo -e "${YELLOW}Remote has changes. Pulling...${NC}"
+            git pull --rebase origin master || {
+                echo -e "${RED}Failed to sync with remote. Please resolve conflicts.${NC}"
+                if [ "$STASH_NEEDED" = true ]; then
+                    echo -e "${YELLOW}Restoring stashed changes...${NC}"
+                    git stash pop
+                fi
+                exit 1
+            }
+        fi
+
+        if [ "$STASH_NEEDED" = true ]; then
+            echo -e "${YELLOW}Restoring stashed changes...${NC}"
+            git stash pop || {
+                echo -e "${RED}Warning: Could not restore stashed changes. Check 'git stash list'${NC}"
+            }
+        fi
+
+        dvc add ./models/best_model/
+
+        git add models/best_model.dvc .gitignore
+        git commit -m "Model version v${VERSION}" || {
+            echo -e "${YELLOW}No changes to commit or commit failed${NC}"
+        }
+
+        echo -e "${GREEN}Pushing model to DVC remote...${NC}"
+        dvc push || {
+            echo -e "${RED}DVC push failed!${NC}"
+            exit 1
+        }
+
+        echo -e "${GREEN}Pushing to Git remote...${NC}"
+        git push || {
+            echo -e "${RED}Git push failed!${NC}"
+            exit 1
+        }
+
+        echo -e "${GREEN}Model version v${VERSION} successfully created and pushed!${NC}"
+        ;;
+
+    get_model_version)
+        get_model_version "${2:-models/best_model.dvc}"
+        ;;
+
     status)
         echo -e "${GREEN}Pipeline Status:${NC}"
         dvc status
