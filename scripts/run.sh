@@ -148,6 +148,14 @@ case "$1" in
                     exit 1
                 }
             fi
+            echo ""
+            read -p "Do you want to select model version before evaluation? [y/N]: " select_model_version
+            if [ "$select_model_version" = "y" ] || [ "$select_model_version" = "Y" ]; then
+                get_model_version "models/best_model.dvc" || {
+                    echo -e "${RED}Failed to select model version${NC}"
+                    exit 1
+                }  
+            fi 
         fi
         echo ""
         dvc repro
