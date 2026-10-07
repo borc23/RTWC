@@ -93,38 +93,6 @@ This will:
 3. Let you decide whether to push
 4. Optionally tag the release
 
-## Directory Structure
-
-```
-yolo-pipeline/
-├── configs/
-│   └── train_config.yaml    # Training configuration
-├── data/                    # Dataset (DVC tracked)
-│   ├── train/
-│   ├── val/
-│   └── test/
-├── models/                  # Saved models (DVC tracked)
-├── outputs/                 # Pipeline outputs
-│   ├── data_stats.json
-│   ├── train_metrics.json
-│   ├── eval_metrics.json
-│   ├── test_metrics.json
-│   └── predictions/
-├── runs/                    # Training runs
-├── scripts/
-│   ├── setup.sh
-│   ├── run.sh
-│   └── review_and_push.sh
-├── src/
-│   ├── prepare_data.py
-│   ├── train.py
-│   ├── evaluate.py
-│   └── test.py
-├── dvc.yaml                 # Pipeline definition
-├── params.yaml              # Tracked parameters
-└── requirements.txt
-```
-
 ## Common Commands
 
 ```bash
